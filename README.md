@@ -1,4 +1,4 @@
-# raspyrust
+# raspyWeb
 
 A multithreaded HTTPS web server written in Rust, running on a Raspberry Pi 5.  
 Built starting from the [The Rust Programming Language](https://doc.rust-lang.org/book/) book (Chapter 20) and evolved into a production-ready setup with Axum + Caddy.
@@ -16,7 +16,7 @@ Live at: **https://raspyrust.duckdns.org**
 | TLS / reverse proxy | [Caddy](https://caddyserver.com) |
 | DNS | [DuckDNS](https://duckdns.org) |
 | Hardware | Raspberry Pi 5 |
-| OS | Arch Linux ARM |
+| OS | Debian Trixie ARM |
 
 ---
 
