@@ -1,0 +1,1 @@
+searchState.loadedDescShard("hello", 0, "A pool of worker threads that can execute jobs …\nSend a closure to be executed by one of the pool’s …\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nCreate a new ThreadPool.")

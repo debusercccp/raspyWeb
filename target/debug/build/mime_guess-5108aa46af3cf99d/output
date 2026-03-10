@@ -1,0 +1,1 @@
+cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/home/noya/rust/webserver/target/debug/build/mime_guess-5108aa46af3cf99d/out/mime_types_generated.rs

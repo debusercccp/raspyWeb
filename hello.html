@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>raspyrust</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #080c0f;
+      --surface:  #0d1418;
+      --border:   #1a2830;
+      --green:    #00ff9d;
+      --green-dim:#00c97a;
+      --amber:    #ffb700;
+      --red:      #ff3c5a;
+      --text:     #c8d8e0;
+      --muted:    #4a6070;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Subtle vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      animation: fadeIn 0.6s ease both;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      animation: slideDown 0.5s ease both;
+    }
+
+    .logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 20px rgba(0,255,157,0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .logo span { color: var(--amber); }
+
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+      margin-left: auto;
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      color: var(--green-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ── Terminal card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      animation: slideUp 0.5s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card:nth-child(3) { animation-delay: 0.2s; }
+    .card:nth-child(4) { animation-delay: 0.3s; }
+
+    .card-header {
+      background: var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .card-header .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .dot-red   { background: var(--red); }
+    .dot-amber { background: var(--amber); }
+    .dot-green { background: var(--green); }
+
+    .card-body { padding: 1.25rem 1.5rem; }
+
+    /* ── Prompt line ── */
+    .prompt {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .prompt-user { color: var(--green); }
+    .prompt-host { color: var(--amber); }
+    .prompt-path { color: var(--text); }
+    .prompt-sym  { color: var(--green-dim); }
+
+    .output {
+      color: var(--text);
+      font-size: 0.88rem;
+      line-height: 1.8;
+      padding-left: 1.2rem;
+      border-left: 2px solid var(--border);
+    }
+
+    .output .key   { color: var(--muted); }
+    .output .val   { color: var(--green); }
+    .output .warn  { color: var(--amber); }
+    .output .err   { color: var(--red); }
+
+    /* ── Counter ── */
+    .counter-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .counter-display {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.5rem;
+      color: var(--green);
+      text-shadow: 0 0 30px rgba(0,255,157,0.3);
+      min-width: 4ch;
+      text-align: center;
+      transition: color 0.2s;
+    }
+
+    .counter-display.flash {
+      color: var(--amber);
+      text-shadow: 0 0 30px rgba(255,183,0,0.4);
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.15s;
+      border-radius: 2px;
+    }
+
+    .btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 0 10px rgba(0,255,157,0.15);
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn.danger:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,60,90,0.15); }
+
+    /* ── Progress bar ── */
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.08em;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.9rem;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(0,255,157,0.4);
+      animation: growBar 1.2s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .bar-fill.amber { background: var(--amber); box-shadow: 0 0 8px rgba(255,183,0,0.4); animation-delay: 0.15s; }
+    .bar-fill.red   { background: var(--red);   box-shadow: 0 0 8px rgba(255,60,90,0.4);  animation-delay: 0.3s; }
+
+    /* ── Blink cursor ── */
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      margin-top: 1rem;
+      animation: fadeIn 1s ease 0.6s both;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn   { from { opacity:0 } to { opacity:1 } }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-16px) } to { opacity:1; transform:none } }
+    @keyframes slideUp   { from { opacity:0; transform:translateY(16px)  } to { opacity:1; transform:none } }
+    @keyframes pulse     { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+    @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes growBar   { from { width:0 } }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">raspy<span>rust</span></div>
+    <div class="status-label">online</div>
+    <div class="status-dot"></div>
+  </div>
+
+  <!-- System info card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+      <span style="margin-left:0.5rem">system info</span>
+    </div>
+    <div class="card-body">
+      <div class="prompt">
+        <span class="prompt-user">noya</span>
+        <span class="prompt-sym">@</span>
+        <span class="prompt-host">rasp</span>
+        <span class="prompt-sym">~$</span>
+        <span class="prompt-path">uname -a</span>
+      </div>
+      <div class="output">
+        <div><span class="key">os      </span> <span class="val">Linux rasp 6.6 aarch64</span></div>
+        <div><span class="key">server  </span> <span class="val">Rust + Axum</span></div>
+        <div><span class="key">tls     </span> <span class="val">Let's Encrypt via Caddy</span></div>
+        <div><span class="key">status  </span> <span class="val">operational ✓</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Counter card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+      <span style="margin-left:0.5rem">interactive counter</span>
+    </div>
+    <div class="card-body">
+      <div class="prompt">
+        <span class="prompt-user">noya</span>
+        <span class="prompt-sym">@</span>
+        <span class="prompt-host">rasp</span>
+        <span class="prompt-sym">~$</span>
+        <span class="prompt-path">./counter --interactive</span>
+      </div>
+      <div class="counter-row">
+        <button class="btn danger" onclick="dec()">-- dec</button>
+        <div class="counter-display" id="counter">000</div>
+        <button class="btn" onclick="inc()">++ inc</button>
+        <button class="btn" onclick="reset()" style="margin-left:auto">reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+      <span style="margin-left:0.5rem">system load</span>
+    </div>
+    <div class="card-body">
+      <div class="bar-label"><span>CPU</span><span>42%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+
+      <div class="bar-label"><span>RAM</span><span>67%</span></div>
+      <div class="bar-track"><div class="bar-fill amber" style="width:67%"></div></div>
+
+      <div class="bar-label"><span>DISK</span><span>81%</span></div>
+      <div class="bar-track"><div class="bar-fill red" style="width:81%"></div></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    raspyrust.duckdns.org &nbsp;·&nbsp; raspberry pi 5 &nbsp;·&nbsp; <span id="time"></span><span class="cursor"></span>
+  </div>
+
+</div>
+
+<script>
+  let count = 0;
+
+  function fmt(n) {
+    return String(Math.abs(n)).padStart(3, '0');
+  }
+
+  function flash(el) {
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 200);
+  }
+
+  function inc() {
+    count++;
+    const el = document.getElementById('counter');
+    el.textContent = (count < 0 ? '-' : '') + fmt(count);
+    flash(el);
+  }
+
+  function dec() {
+    count--;
+    const el = document.getElementById('counter');
+    el.textContent = (count < 0 ? '-' : '') + fmt(count);
+    flash(el);
+  }
+
+  function reset() {
+    count = 0;
+    const el = document.getElementById('counter');
+    el.textContent = '000';
+  }
+
+  // Live clock in footer
+  function tick() {
+    const now = new Date();
+    document.getElementById('time').textContent =
+      now.toLocaleTimeString('it-IT', { hour12: false });
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js")
+        .then(() => console.log("SW registrato ✓"))
+        .catch(e => console.warn("SW fallito:", e));
+}
+</script>
+</body>
+</html>

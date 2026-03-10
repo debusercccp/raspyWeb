@@ -1,0 +1,20 @@
+# Rust build artifacts
+/target
+Cargo.lock
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.neovim/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / certs
+*.pem
+*.key
+*.env
+.env*
