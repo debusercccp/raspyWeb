@@ -27,12 +27,20 @@ async fn main() {
 }
 
 async fn hello() -> impl IntoResponse {
-    serve_html("hello.html").await
+    let hostname = hostname();
+    match fs::read_to_string("hello.html").await {
+        Ok(contents) => Html(contents.replace("{{hostname}}", &hostname)),
+        Err(_) => Html(format!("<h1>Error: hello.html not found</h1>")),
+    }
 }
 
 async fn slow() -> impl IntoResponse {
     sleep(Duration::from_secs(5)).await;
-    serve_html("hello.html").await
+    let hostname = hostname();
+    match fs::read_to_string("hello.html").await {
+        Ok(contents) => Html(contents.replace("{{hostname}}", &hostname)),
+        Err(_) => Html(format!("<h1>Error: hello.html not found</h1>")),
+    }
 }
 
 async fn not_found() -> impl IntoResponse {
@@ -40,7 +48,6 @@ async fn not_found() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, body)
 }
 
-// Serves sw.js with the correct Content-Type for service workers
 async fn service_worker() -> Response {
     match fs::read_to_string("sw.js").await {
         Ok(contents) => (
@@ -51,10 +58,16 @@ async fn service_worker() -> Response {
     }
 }
 
-// Reads an HTML file from disk and returns it as a response.
 async fn serve_html(filename: &str) -> Html<String> {
     match fs::read_to_string(filename).await {
         Ok(contents) => Html(contents),
         Err(_) => Html(format!("<h1>Error: {} not found</h1>", filename)),
     }
+}
+
+fn hostname() -> String {
+    std::fs::read_to_string("/etc/hostname")
+        .unwrap_or_else(|_| "unknown".to_string())
+        .trim()
+        .to_string()
 }
