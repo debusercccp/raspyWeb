@@ -301,14 +301,6 @@
   tick();
   setInterval(tick, 1000);
 
-  // Fake but animated stats (real stats need a /stats API endpoint)
-  function animateBar(barId, pctId, value) {
-    document.getElementById(pctId).textContent = value + '%';
-    const bar = document.getElementById(barId);
-    bar.style.transition = 'width 1.2s cubic-bezier(0.16,1,0.3,1)';
-    setTimeout(() => bar.style.width = value + '%', 100);
-  }
-
   // Uptime from page load
   const startTime = Date.now();
   function updateUptime() {
@@ -320,10 +312,29 @@
   updateUptime();
   setInterval(updateUptime, 1000);
 
-  // Animate bars on load with placeholder values
-  // Replace with fetch('/stats') once you add that endpoint in Rust
-  animateBar('cpu-bar', 'cpu-pct', 42);
-  animateBar('ram-bar', 'ram-pct', 67);
+  // Real stats from /stats endpoint
+  function setBar(barId, pctId, value) {
+    document.getElementById(pctId).textContent = Math.round(value) + '%';
+    const bar = document.getElementById(barId);
+    bar.style.transition = 'width 0.8s cubic-bezier(0.16,1,0.3,1)';
+    bar.style.width = value + '%';
+  }
+
+  async function fetchStats() {
+    try {
+      const res = await fetch('/stats');
+      const data = await res.json();
+      setBar('cpu-bar', 'cpu-pct', data.cpu);
+      setBar('ram-bar', 'ram-pct', data.ram);
+      document.getElementById('ram-pct').textContent =
+        Math.round(data.ram) + '% (' + data.ram_used_mb + '/' + data.ram_total_mb + ' MB)';
+    } catch (e) {
+      console.warn('stats fetch failed:', e);
+    }
+  }
+
+  fetchStats();
+  setInterval(fetchStats, 3000);
 </script>
 <script>
   if ("serviceWorker" in navigator) {
