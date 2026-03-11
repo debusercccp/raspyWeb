@@ -15,8 +15,6 @@ Live at: **https://raspyrust.duckdns.org**
 | Async runtime | [Tokio](https://tokio.rs) |
 | TLS / reverse proxy | [Caddy](https://caddyserver.com) |
 | DNS | [DuckDNS](https://duckdns.org) |
-| Hardware | Raspberry Pi 5 |
-| OS | Debian Trixie ARM |
 
 ---
 
@@ -60,7 +58,9 @@ axum-hello/
 cargo run
 # server starts on http://127.0.0.1:7878
 ```
-
+## Note
+HTTPS is handled by Caddy on the Raspberry Pi.
+Running locally exposes plain HTTP on `http://localhost:7878` — this is fine for development.
 ---
 
 ## Deploy (Raspberry Pi)
