@@ -32,8 +32,15 @@ async fn main() {
         .unwrap();
 
     info!("Listening on http://127.0.0.1:7878");
+    info!("Press Ctrl+C to stop");
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async {
+            tokio::signal::ctrl_c().await.unwrap();
+            info!("Shutting down gracefully...");
+        })
+        .await
+        .unwrap();
 }
 
 async fn hello() -> impl IntoResponse {
@@ -68,7 +75,6 @@ async fn service_worker() -> Response {
     }
 }
 
-// GET /stats — returns real CPU and RAM usage as JSON
 async fn stats() -> Json<Stats> {
     Json(Stats {
         cpu: read_cpu().await,
@@ -90,7 +96,6 @@ fn hostname() -> String {
         .to_string()
 }
 
-// Reads CPU usage by sampling /proc/stat twice 200ms apart
 async fn read_cpu() -> f32 {
     fn parse_stat() -> Option<(u64, u64)> {
         let content = std::fs::read_to_string("/proc/stat").ok()?;
@@ -120,7 +125,6 @@ async fn read_cpu() -> f32 {
     }
 }
 
-// Reads RAM usage from /proc/meminfo
 fn read_ram() -> Stats {
     let content = std::fs::read_to_string("/proc/meminfo").unwrap_or_default();
     let mut total = 0u64;
