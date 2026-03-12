@@ -1,104 +1,98 @@
-# raspyWeb
+# raspyWeb — Server HTTPS in Rust su Raspberry Pi
 
-A multithreaded HTTPS web server written in Rust, running on a Raspberry Pi 5.  
-Built starting from the [The Rust Programming Language](https://doc.rust-lang.org/book/) book (Chapter 20) and evolved into a production-ready setup with Axum + Caddy.
+Web server asincrono scritto in Rust, in esecuzione su un Raspberry Pi 5.
+Partito dall'esercizio del capitolo 20 di *The Rust Programming Language*,
+evoluto in un setup completo con Axum + Caddy.
 
-Live at: **https://raspyrust.duckdns.org**
+Live: https://raspyrust.duckdns.org
 
 ---
 
 ## Stack
 
-| Layer | Technology |
+| Layer | Tecnologia |
 |---|---|
-| Web framework | [Axum](https://github.com/tokio-rs/axum) |
-| Async runtime | [Tokio](https://tokio.rs) |
-| TLS / reverse proxy | [Caddy](https://caddyserver.com) |
-| DNS | [DuckDNS](https://duckdns.org) |
+| Web framework | Axum |
+| Async runtime | Tokio |
+| TLS / reverse proxy | Caddy |
+| DNS | DuckDNS |
 
 ---
 
-## Features
+## Funzionalità
 
-- Async HTTP server via Axum + Tokio
-- HTTPS via Caddy (auto Let's Encrypt)
-- Service Worker — offline page when the Pi is off
-- Terminal-style frontend (HTML/CSS/JS, no frameworks)
+- Server HTTP asincrono via Axum + Tokio
+- HTTPS automatico via Caddy (Let's Encrypt)
+- Service Worker — pagina offline quando il Pi è spento
+- Frontend in stile terminale (HTML/CSS/JS, nessun framework)
 
 ---
 
-## Project structure
-
+## Struttura
 ```
 axum-hello/
 ├── Cargo.toml
-├── hello.html      # main page
-├── 404.html        # not found page
-├── sw.js           # service worker (offline support)
+├── hello.html       # pagina principale
+├── 404.html         # pagina not found
+├── sw.js            # service worker (supporto offline)
 └── src/
-    └── main.rs     # Axum server
+    └── main.rs      # server Axum
 ```
 
 ---
 
-## Routes
+## Route
 
-| Route | Description |
+| Route | Descrizione |
 |---|---|
-| `GET /` | Serves `hello.html` |
-| `GET /sleep` | Waits 5s then serves `hello.html` (async, non-blocking) |
-| `GET /sw.js` | Serves the service worker |
-| anything else | 404 page |
+| GET / | Serve hello.html |
+| GET /sleep | Attende 5s poi serve hello.html (asincrono, non bloccante) |
+| GET /sw.js | Serve il service worker |
+| altro | Pagina 404 |
 
 ---
 
-## Run locally
-
+## Avvio locale
 ```bash
 cargo run
-# server starts on http://127.0.0.1:7878
+# server disponibile su http://127.0.0.1:7878
 ```
-## Note
-HTTPS is handled by Caddy on the Raspberry Pi.
-Running locally exposes plain HTTP on `http://localhost:7878` — this is fine for development.
+
+HTTPS è gestito da Caddy sul Raspberry Pi.
+In locale il server espone HTTP semplice — va bene per lo sviluppo.
+
 ---
 
-## Deploy (Raspberry Pi)
+## Deploy su Raspberry Pi
 
-**1. Build on the Pi:**
+Build:
 ```bash
 cargo build --release
 ./target/release/axum-hello
 ```
 
-**2. Caddy config (`/etc/caddy/Caddyfile`):**
+Caddyfile:
 ```
 raspyrust.duckdns.org {
     reverse_proxy localhost:7878
 }
 ```
 
-**3. Start Caddy:**
+Avvio Caddy:
 ```bash
 sudo systemctl enable --now caddy
 ```
 
-**4. Keep DuckDNS updated (cron every 5 min):**
+Aggiornamento DuckDNS (cron ogni 5 minuti):
 ```bash
 */5 * * * * ~/duckdns/duck.sh >/dev/null 2>&1
 ```
 
 ---
 
-## Security
+## Sicurezza
 
-- SSH password auth disabled (key only)
-- `ufw` firewall — only ports 80, 443, 2222 open
-- `fail2ban` monitoring SSH
-- No exposed database or internal ports
-
----
-
-## Origin
-
-Started as the book exercise from *The Rust Programming Language* Ch. 20 — a manual thread pool HTTP server — then rewritten with Axum for async handling and deployed on a real Pi with HTTPS.
+- Autenticazione SSH solo a chiave (password disabilitata)
+- Firewall ufw — solo porte 80, 443, 2222 aperte
+- fail2ban attivo su SSH
+- Nessun database o porta interna esposta
